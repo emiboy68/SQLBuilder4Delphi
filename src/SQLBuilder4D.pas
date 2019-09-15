@@ -18,7 +18,8 @@ type
   TSQLUnionType = (utUnion, utUnionAll);
   TSQLSort = (srNone, srAsc, srDesc);
   TSQLLikeOperator = (loEqual, loStarting, loEnding, loContaining);
-  TSQLOperator = (opEqual, opDifferent, opGreater, opLess, opGreaterOrEqual, opLessOrEqual, opLike, opNotLike, opIsNull, opNotNull);
+  TSQLOperator = (opEqual, opDifferent, opGreater, opLess, opGreaterOrEqual, opLessOrEqual, opLike, opNotLike, opIsNull, opNotNull,
+    opIsEmpty, opNotEmpty);
 
   ESQLBuilderException = class(Exception);
 
@@ -256,6 +257,9 @@ type
     function IsNull(): ISQLWhere;
     function IsNotNull(): ISQLWhere;
 
+    function IsEmpty(): ISQLWhere;
+    function IsNotEmpty(): ISQLWhere;
+
     function InList(const pValues: array of TValue): ISQLWhere; overload;
     function InList(pValues: array of ISQLValue): ISQLWhere; overload;
 
@@ -454,6 +458,7 @@ type
 
     class function Where(): ISQLWhere; overload; static;
     class function Where(const pColumn: string): ISQLWhere; overload; static;
+    class function Agrupa(const pColumn: string): ISQLWhere; overload; static;
 
     class function GroupBy(): ISQLGroupBy; overload; static;
     class function GroupBy(const pColumn: string): ISQLGroupBy; overload; static;
@@ -511,7 +516,7 @@ type
 implementation
 
 const
-  SQL_OPERATOR: array [TSQLOperator] of string = ('=', '<>', '>', '<', '>=', '<=', 'Like', 'Not Like', 'Is Null', 'Is Not Null');
+  SQL_OPERATOR: array [TSQLOperator] of string = ('=', '<>', '>', '<', '>=', '<=', 'Like', 'Not Like', 'Is Null', 'Is Not Null', '='+'''''', '<>'+'''''');
 
 type
 
@@ -834,6 +839,9 @@ type
 
     function IsNull(): ISQLWhere;
     function IsNotNull(): ISQLWhere;
+
+    function IsEmpty(): ISQLWhere;
+    function IsNotEmpty(): ISQLWhere;
 
     function InList(const pValues: array of TValue): ISQLWhere; overload;
     function InList(pValues: array of ISQLValue): ISQLWhere; overload;
@@ -2388,6 +2396,18 @@ begin
   Result := Self;
 end;
 
+function TSQLWhere.IsNotEmpty: ISQLWhere;
+begin
+  AddExpression(opNotEmpty, TSQLValue.Create('').Expression);
+  Result := Self;
+end;
+
+function TSQLWhere.IsEmpty: ISQLWhere;
+begin
+  AddExpression(opIsEmpty, TSQLValue.Create('').Expression);
+  Result := Self;
+end;
+
 function TSQLWhere.Less(const pValue: TValue): ISQLWhere;
 begin
   Result := Less(TSQLValue.Create(pValue));
@@ -3695,6 +3715,12 @@ begin
 end;
 
 class function SQL.Where(const pColumn: string): ISQLWhere;
+begin
+  Result := SQL.Where();
+  Result.Column(pColumn);
+end;
+
+class function SQL.Agrupa(const pColumn: string): ISQLWhere;
 begin
   Result := SQL.Where();
   Result.Column(pColumn);
